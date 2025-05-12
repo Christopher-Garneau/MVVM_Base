@@ -1,0 +1,8 @@
+<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+                    xmlns:viewModel="clr-namespace:Challenge_PixelWaves.ViewModels"
+                    xmlns:view="clr-namespace:Challenge_PixelWaves.View">
+    <DataTemplate DataType="{x:Type viewModel:PixelGeneratorViewModel}">
+        <view:PixelGeneratorView/>
+    </DataTemplate>
+</ResourceDictionary>
