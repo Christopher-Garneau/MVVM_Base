@@ -14,6 +14,7 @@ namespace Challenge_PixelWaves.ViewModels
         private WriteableBitmap _bitmap;
         private byte[] _pixels;
         private int _stride;
+        private int _rainbowOffset = 0;
 
         public WriteableBitmap Bitmap
         {
@@ -26,8 +27,6 @@ namespace Challenge_PixelWaves.ViewModels
         }
 
         private DispatcherTimer _timer;
-        private byte _redIntensity = 255;
-        private bool _increasing = false;
 
         public PixelGeneratorViewModel(IPixelGeneratorService pixelGeneratorService, INavigationService navigationService)
         {
@@ -54,27 +53,18 @@ namespace Challenge_PixelWaves.ViewModels
 
         private void UpdateFrame(object? sender, EventArgs e)
         {
-            if (_increasing)
-            {
-                _redIntensity++;
-                if (_redIntensity >= 255) _increasing = false;
-            }
-            else
-            {
-                _redIntensity--;
-                if (_redIntensity <= 50) _increasing = true;
-            }
-
-            UpdateSquare(Bitmap.PixelWidth, Bitmap.PixelHeight, Color.FromRgb(_redIntensity, 0, 0));
+            _rainbowOffset = (_rainbowOffset + 5) % Bitmap.PixelWidth;
+            UpdateRainbowEffect(Bitmap.PixelWidth, Bitmap.PixelHeight);
         }
 
-        private void UpdateSquare(int width, int height, Color color)
+        private void UpdateRainbowEffect(int width, int height)
         {
             for (int y = 0; y < height; y++)
             {
                 for (int x = 0; x < width; x++)
                 {
                     int index = (y * _stride) + (x * 4);
+                    Color color = GetRainbowColor((x + _rainbowOffset) % width, width);
                     _pixels[index] = color.B;
                     _pixels[index + 1] = color.G;
                     _pixels[index + 2] = color.R;
@@ -85,6 +75,15 @@ namespace Challenge_PixelWaves.ViewModels
             Bitmap.Lock();
             Bitmap.WritePixels(new System.Windows.Int32Rect(0, 0, width, height), _pixels, _stride, 0);
             Bitmap.Unlock();
+        }
+
+        private Color GetRainbowColor(int position, int width)
+        {
+            double ratio = (double)position / width;
+            byte r = (byte)(Math.Sin(2 * Math.PI * ratio) * 127 + 128);
+            byte g = (byte)(Math.Sin(2 * Math.PI * ratio + 2 * Math.PI / 3) * 127 + 128);
+            byte b = (byte)(Math.Sin(2 * Math.PI * ratio + 4 * Math.PI / 3) * 127 + 128);
+            return Color.FromRgb(r, g, b);
         }
     }
 }
