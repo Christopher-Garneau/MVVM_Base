@@ -1,5 +1,6 @@
 using System.Windows.Media.Imaging;
 using System.Windows.Media;
+using System.Windows.Threading;
 using Challenge_PixelWaves.Services.Interfaces;
 using Challenge_PixelWaves.Utils;
 
@@ -21,6 +22,8 @@ namespace Challenge_PixelWaves.ViewModels
             }
         }
 
+        private DispatcherTimer _timer;
+        private byte _redIntensity = 255; private bool _increasing = false;
         public PixelGeneratorViewModel(IPixelGeneratorService pixelGeneratorService, INavigationService navigationService)
         {
             _pixelGeneratorService = pixelGeneratorService;
@@ -28,33 +31,51 @@ namespace Challenge_PixelWaves.ViewModels
 
             Bitmap = new WriteableBitmap(800, 450, 96, 96, PixelFormats.Bgra32, null);
 
-            for (int i = 0; i < 200; i++)
+            _timer = new DispatcherTimer
             {
-                for (int j = 0; i < 200; i++)
-                {
-                    SetPixel(i, j, Colors.Red);
-                }
-            }
-            System.Diagnostics.Debug.WriteLine("PixelGeneratorViewModel instancié");
+                Interval = TimeSpan.FromMilliseconds(16)
+            };
+            _timer.Tick += UpdateFrame;
+            _timer.Start();
 
+            System.Diagnostics.Debug.WriteLine("PixelGeneratorViewModel instancié");
         }
 
-        public void SetPixel(int x, int y, Color color)
+        private void UpdateFrame(object? sender, EventArgs e)
         {
-            if (x < 0 || x >= Bitmap.PixelWidth || y < 0 || y >= Bitmap.PixelHeight) return;
+            if (_increasing)
+            {
+                _redIntensity++;
+                if (_redIntensity >= 255) _increasing = false;
+            }
+            else
+            {
+                _redIntensity--;
+                if (_redIntensity <= 50) _increasing = true;
+            }
+
+            DrawSquare(Bitmap.PixelWidth, Bitmap.PixelHeight, Color.FromRgb(_redIntensity, 0, 0));
+        }
+
+        private void DrawSquare(int width, int height, Color color)
+        {
+            int stride = width * 4;
+            byte[] pixels = new byte[stride * height];
+
+            for (int y = 0; y < height; y++)
+            {
+                for (int x = 0; x < width; x++)
+                {
+                    int index = (y * stride) + (x * 4);
+                    pixels[index] = color.B;
+                    pixels[index + 1] = color.G;
+                    pixels[index + 2] = color.R;
+                    pixels[index + 3] = 255;
+                }
+            }
 
             Bitmap.Lock();
-            unsafe
-            {
-                IntPtr pBackBuffer = Bitmap.BackBuffer;
-                int stride = Bitmap.BackBufferStride;
-                byte* p = (byte*)pBackBuffer + y * stride + x * 4;
-                p[0] = color.B;
-                p[1] = color.G;
-                p[2] = color.R;
-                p[3] = color.A;
-            }
-            Bitmap.AddDirtyRect(new System.Windows.Int32Rect(x, y, 1, 1));
+            Bitmap.WritePixels(new System.Windows.Int32Rect(0, 0, width, height), pixels, stride, 0);
             Bitmap.Unlock();
         }
     }
