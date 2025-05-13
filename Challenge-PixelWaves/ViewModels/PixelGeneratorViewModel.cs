@@ -1,5 +1,5 @@
-using System.Windows.Media.Imaging;
 using System.Windows.Media;
+using System.Windows.Media.Imaging;
 using System.Windows.Threading;
 using Challenge_PixelWaves.Services.Interfaces;
 using Challenge_PixelWaves.Utils;
@@ -8,8 +8,8 @@ namespace Challenge_PixelWaves.ViewModels
 {
     public class PixelGeneratorViewModel : BaseViewModel
     {
-        private IPixelGeneratorService _pixelGeneratorService;
-        private INavigationService _navigationService;
+        private readonly IPixelGeneratorService _pixelGeneratorService;
+        private readonly INavigationService _navigationService;
 
         private WriteableBitmap _bitmap;
         private byte[] _pixels;
@@ -54,36 +54,11 @@ namespace Challenge_PixelWaves.ViewModels
         private void UpdateFrame(object? sender, EventArgs e)
         {
             _rainbowOffset = (_rainbowOffset + 5) % Bitmap.PixelWidth;
-            UpdateRainbowEffect(Bitmap.PixelWidth, Bitmap.PixelHeight);
-        }
-
-        private void UpdateRainbowEffect(int width, int height)
-        {
-            for (int y = 0; y < height; y++)
-            {
-                for (int x = 0; x < width; x++)
-                {
-                    int index = (y * _stride) + (x * 4);
-                    Color color = GetRainbowColor((x + _rainbowOffset) % width, width);
-                    _pixels[index] = color.B;
-                    _pixels[index + 1] = color.G;
-                    _pixels[index + 2] = color.R;
-                    _pixels[index + 3] = 255;
-                }
-            }
+            _pixelGeneratorService.UpdateRainbowEffect(_pixels, Bitmap.PixelWidth, Bitmap.PixelHeight, _stride, _rainbowOffset);
 
             Bitmap.Lock();
-            Bitmap.WritePixels(new System.Windows.Int32Rect(0, 0, width, height), _pixels, _stride, 0);
+            Bitmap.WritePixels(new System.Windows.Int32Rect(0, 0, Bitmap.PixelWidth, Bitmap.PixelHeight), _pixels, _stride, 0);
             Bitmap.Unlock();
-        }
-
-        private Color GetRainbowColor(int position, int width)
-        {
-            double ratio = (double)position / width;
-            byte r = (byte)(Math.Sin(2 * Math.PI * ratio) * 127 + 128);
-            byte g = (byte)(Math.Sin(2 * Math.PI * ratio + 2 * Math.PI / 3) * 127 + 128);
-            byte b = (byte)(Math.Sin(2 * Math.PI * ratio + 4 * Math.PI / 3) * 127 + 128);
-            return Color.FromRgb(r, g, b);
         }
     }
 }
