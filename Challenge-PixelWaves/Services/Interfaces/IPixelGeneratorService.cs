@@ -4,7 +4,9 @@ namespace Challenge_PixelWaves.Services.Interfaces
 {
     public interface IPixelGeneratorService
     {
-        void UpdateRainbowEffect(byte[] pixels, int width, int height, int stride, int offset);
-        Color GetRainbowColor(int position, int width);
+        double[,] Eta_n { get; }
+        int Width { get; }
+        int Height { get; }
+        void StepSimulation();
     }
 }

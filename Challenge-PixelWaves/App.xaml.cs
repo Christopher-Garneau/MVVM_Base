@@ -36,6 +36,9 @@ namespace Challenge_PixelWaves
             services.AddSingleton<PixelGeneratorViewModel>();
 
             services.AddScoped<IPixelGeneratorService, PixelGeneratorService>();
+            services.AddScoped<IPixelGeneratorComputationalParamsService, PixelGeneratorComputationalParamsService>();
+            services.AddScoped<IPixelGeneratorPhysicParamsService, PixelGeneratorPhysicParamsService>();
+            services.AddScoped<IPixelGeneratorService, PixelGeneratorService>();
             services.AddSingleton<INavigationService, NavigationService>();
             services.AddSingleton<Func<Type, BaseViewModel>>(serviceProvider =>
             {

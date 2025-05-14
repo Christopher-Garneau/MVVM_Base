@@ -14,7 +14,29 @@ namespace Challenge_PixelWaves.ViewModels
         private WriteableBitmap _bitmap;
         private byte[] _pixels;
         private int _stride;
-        private int _rainbowOffset = 0;
+
+        private int _width;
+        private int _height;
+
+        private int _stepsPerFrame = 10;
+        public int StepsPerFrame
+        {
+            get => _stepsPerFrame;
+            set
+            {
+                if (_stepsPerFrame != value)
+                {
+                    _stepsPerFrame = value;
+                    OnPropertyChanged(nameof(StepsPerFrame));
+                }
+            }
+        }
+
+
+        private DateTime _lastFrameTime = DateTime.Now;
+        private int _frameCount = 0;
+        private DateTime _lastFpsReport = DateTime.Now;
+
 
         public WriteableBitmap Bitmap
         {
@@ -33,12 +55,12 @@ namespace Challenge_PixelWaves.ViewModels
             _pixelGeneratorService = pixelGeneratorService;
             _navigationService = navigationService;
 
-            int width = 800;
-            int height = 450;
+            _width = _pixelGeneratorService.Width;
+            _height = _pixelGeneratorService.Height;
 
-            Bitmap = new WriteableBitmap(width, height, 96, 96, PixelFormats.Bgra32, null);
-            _stride = width * 4;
-            _pixels = new byte[_stride * height];
+            Bitmap = new WriteableBitmap(_width, _height, 96, 96, PixelFormats.Bgra32, null);
+            _stride = _width * 4;
+            _pixels = new byte[_stride * _height];
 
             double fps = 60.0;
             _timer = new DispatcherTimer
@@ -47,18 +69,71 @@ namespace Challenge_PixelWaves.ViewModels
             };
             _timer.Tick += UpdateFrame;
             _timer.Start();
-
-            System.Diagnostics.Debug.WriteLine("PixelGeneratorViewModel instancié");
         }
 
         private void UpdateFrame(object? sender, EventArgs e)
         {
-            _rainbowOffset = (_rainbowOffset + 5) % Bitmap.PixelWidth;
-            _pixelGeneratorService.UpdateRainbowEffect(_pixels, Bitmap.PixelWidth, Bitmap.PixelHeight, _stride, _rainbowOffset);
+            // Simulation et rendu
+            for (int i = 0; i < StepsPerFrame; i++)
+            {
+                _pixelGeneratorService.StepSimulation();
+            }
+
+            // Calcul du temps écoulé depuis la dernière frame
+            var now = DateTime.Now;
+            double ms = (now - _lastFrameTime).TotalMilliseconds;
+            _lastFrameTime = now;
+
+            // Incrémente le compteur de frames
+            _frameCount++;
+
+            // Affiche le temps de la frame courante (en ms)
+            System.Diagnostics.Debug.WriteLine($"Frame time: {ms:F2} ms");
+
+            // Affiche le FPS toutes les secondes
+            if ((now - _lastFpsReport).TotalSeconds >= 1.0)
+            {
+                System.Diagnostics.Debug.WriteLine($"FPS: {_frameCount}");
+                _frameCount = 0;
+                _lastFpsReport = now;
+            }
+
+            // Simulation et rendu
+            _pixelGeneratorService.StepSimulation();
+            var eta = _pixelGeneratorService.Eta_n;
+            int width = eta.GetLength(0);
+            int height = eta.GetLength(1);
+
+            double min = double.MaxValue, max = double.MinValue;
+            for (int y = 0; y < height; y++)
+                for (int x = 0; x < width; x++)
+                {
+                    double v = eta[x, y];
+                    if (v < min) min = v;
+                    if (v > max) max = v;
+                }
+            double range = max - min;
+            if (range < 1e-8) range = 1.0;
+
+            for (int y = 0; y < height; y++)
+            {
+                for (int x = 0; x < width; x++)
+                {
+                    int index = (y * _stride) + (x * 4);
+                    byte intensity = (byte)(255.0 * (eta[x, y] - min) / range);
+                    _pixels[index] = intensity;
+                    _pixels[index + 1] = intensity;
+                    _pixels[index + 2] = intensity;
+                    _pixels[index + 3] = 255;
+                }
+            }
 
             Bitmap.Lock();
-            Bitmap.WritePixels(new System.Windows.Int32Rect(0, 0, Bitmap.PixelWidth, Bitmap.PixelHeight), _pixels, _stride, 0);
+            Bitmap.WritePixels(new System.Windows.Int32Rect(0, 0, width, height), _pixels, _stride, 0);
             Bitmap.Unlock();
         }
+
+
     }
 }
+
