@@ -139,7 +139,7 @@ namespace Challenge_PixelWaves.ViewModels
                                (1 - wx) * wy * v01 +
                                wx * wy * v11;
 
-                    byte intensity = CalculateIntensity(v, min, max, 16);
+                    byte intensity = CalculateIntensity(v, min, max, 10);
                     int index = (y * _stride) + (x * 4);
                     byte blue = (byte)(255);
                     byte green = intensity;
@@ -157,7 +157,7 @@ namespace Challenge_PixelWaves.ViewModels
             Bitmap.Unlock();
         }
 
-        private byte CalculateIntensity(double v, double min, double max, int discretization = 1)
+        private byte CalculateIntensity(double v, double min, double max, int numberOfTones = 16)
         {
             double range = max - min;
             if (range < 1e-8) range = 1.0;
@@ -167,9 +167,9 @@ namespace Challenge_PixelWaves.ViewModels
             norm = Math.Clamp(norm, 0.0, 1.0);
 
             // Discrétisation si demandé
-            if (discretization > 1)
+            if (numberOfTones > 1)
             {
-                norm = Math.Round(norm * (discretization - 1)) / (discretization - 1);
+                norm = Math.Round(norm * (numberOfTones - 1)) / (numberOfTones - 1);
             }
 
             int intensity = (int)Math.Round(norm * 255.0);
