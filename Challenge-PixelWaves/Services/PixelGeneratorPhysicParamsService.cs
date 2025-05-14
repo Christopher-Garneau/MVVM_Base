@@ -1,11 +1,12 @@
 ﻿using Challenge_PixelWaves.Services.Interfaces;
+using System.Windows;
 
 namespace Challenge_PixelWaves.Services
 {
     public class PixelGeneratorPhysicParamsService : IPixelGeneratorPhysicParamsService
     {
-        public double DomainLengthX => 800e3;
-        public double DomainLengthY => 450e3;
+        public double DomainLengthX => SystemParameters.PrimaryScreenWidth * 1e3;
+        public double DomainLengthY => SystemParameters.PrimaryScreenHeight * 1e3;
         public double Gravity => 9.81;
         public double FluidDepth => 100.0;
         public double CoriolisBase => 1e-4;
