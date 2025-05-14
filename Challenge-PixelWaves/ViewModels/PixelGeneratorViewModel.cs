@@ -73,12 +73,6 @@ namespace Challenge_PixelWaves.ViewModels
 
         private void UpdateFrame(object? sender, EventArgs e)
         {
-            // Simulation et rendu
-            for (int i = 0; i < StepsPerFrame; i++)
-            {
-                _pixelGeneratorService.StepSimulation();
-            }
-
             // Calcul du temps écoulé depuis la dernière frame
             var now = DateTime.Now;
             double ms = (now - _lastFrameTime).TotalMilliseconds;
@@ -99,14 +93,21 @@ namespace Challenge_PixelWaves.ViewModels
             }
 
             // Simulation et rendu
-            _pixelGeneratorService.StepSimulation();
+            // Simulation et rendu
+            for (int i = 0; i < StepsPerFrame; i++)
+            {
+                _pixelGeneratorService.StepSimulation();
+            }
             var eta = _pixelGeneratorService.Eta_n;
-            int width = eta.GetLength(0);
-            int height = eta.GetLength(1);
+            int srcWidth = eta.GetLength(0);
+            int srcHeight = eta.GetLength(1);
+            int dstWidth = _width;
+            int dstHeight = _height;
 
+            // Trouver min/max pour normalisation
             double min = double.MaxValue, max = double.MinValue;
-            for (int y = 0; y < height; y++)
-                for (int x = 0; x < width; x++)
+            for (int y = 0; y < srcHeight; y++)
+                for (int x = 0; x < srcWidth; x++)
                 {
                     double v = eta[x, y];
                     if (v < min) min = v;
@@ -115,25 +116,48 @@ namespace Challenge_PixelWaves.ViewModels
             double range = max - min;
             if (range < 1e-8) range = 1.0;
 
-            for (int y = 0; y < height; y++)
+            // Pour chaque pixel du bitmap d'affichage
+            for (int y = 0; y < dstHeight; y++)
             {
-                for (int x = 0; x < width; x++)
+                double srcY = (double)y / (dstHeight - 1) * (srcHeight - 1);
+                int y0 = (int)Math.Floor(srcY);
+                int y1 = Math.Min(y0 + 1, srcHeight - 1);
+                double wy = srcY - y0;
+
+                for (int x = 0; x < dstWidth; x++)
                 {
+                    double srcX = (double)x / (dstWidth - 1) * (srcWidth - 1);
+                    int x0 = (int)Math.Floor(srcX);
+                    int x1 = Math.Min(x0 + 1, srcWidth - 1);
+                    double wx = srcX - x0;
+
+                    // Interpolation bilinéaire
+                    double v00 = eta[x0, y0];
+                    double v10 = eta[x1, y0];
+                    double v01 = eta[x0, y1];
+                    double v11 = eta[x1, y1];
+                    double v = (1 - wx) * (1 - wy) * v00 +
+                               wx * (1 - wy) * v10 +
+                               (1 - wx) * wy * v01 +
+                               wx * wy * v11;
+
+                    byte intensity = (byte)(255.0 * (v - min) / range);
                     int index = (y * _stride) + (x * 4);
-                    byte intensity = (byte)(255.0 * (eta[x, y] - min) / range);
-                    _pixels[index] = intensity;
-                    _pixels[index + 1] = intensity;
-                    _pixels[index + 2] = intensity;
-                    _pixels[index + 3] = 255;
+                    byte blue = (byte)(255);
+                    byte green = intensity;
+                    byte red = intensity;
+
+                    _pixels[index] = blue;    // B
+                    _pixels[index + 1] = green; // G
+                    _pixels[index + 2] = red;   // R
+                    _pixels[index + 3] = 255;   // A
                 }
             }
 
             Bitmap.Lock();
-            Bitmap.WritePixels(new System.Windows.Int32Rect(0, 0, width, height), _pixels, _stride, 0);
+            Bitmap.WritePixels(new System.Windows.Int32Rect(0, 0, _width, _height), _pixels, _stride, 0);
             Bitmap.Unlock();
         }
-
-
     }
 }
 

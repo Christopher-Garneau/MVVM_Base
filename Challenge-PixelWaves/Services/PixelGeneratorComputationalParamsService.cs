@@ -31,8 +31,8 @@ namespace Challenge_PixelWaves.Services
 
         public PixelGeneratorComputationalParamsService(IPixelGeneratorPhysicParamsService param)
         {
-            GridPointsX = 100;//(int)(param.DomainLengthX/1e3);
-            GridPointsY = 100;//(int)(param.DomainLengthY/1e3);
+            GridPointsX = 200;
+            GridPointsY = 200;
             double Lx = param.DomainLengthX;
             double Ly = param.DomainLengthY;
             double g = param.Gravity;
@@ -47,7 +47,7 @@ namespace Challenge_PixelWaves.Services
 
             TimeStep = 0.1 * Math.Min(GridSpacingX, GridSpacingY) / Math.Sqrt(g * H);
             CurrentTimeStep = 1;
-            MaxTimeStep = 5000;
+            MaxTimeStep = 50000;
 
             XCoordinates = Linspace(-Lx / 2, Lx / 2, GridPointsX);
             YCoordinates = Linspace(-Ly / 2, Ly / 2, GridPointsY);

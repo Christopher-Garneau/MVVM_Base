@@ -105,14 +105,17 @@ namespace Challenge_PixelWaves.Services
             for (int x = 0; x < nx; x++)
                 _vN[x, ny - 1] = 0.0;
 
+            double x0 = 0.0 * 1e3;
+            double y0 = 0.0 * 1e3;
+            double sigma = 0.05E+6;
             for (int y = 0; y < ny; y++)
             {
                 for (int x = 0; x < nx; x++)
                 {
                     _etaN[x, y] = Math.Exp(
                         -(
-                            Math.Pow(X[x, y] - Lx / 2.7, 2) / (2 * Math.Pow(0.05E+6, 2)) +
-                            Math.Pow(Y[x, y] - Ly / 4, 2) / (2 * Math.Pow(0.05E+6, 2))
+                            Math.Pow(X[x, y] - x0, 2) / (2 * sigma * sigma) +
+                            Math.Pow(Y[x, y] - y0, 2) / (2 * sigma * sigma)
                         )
                     );
                 }
