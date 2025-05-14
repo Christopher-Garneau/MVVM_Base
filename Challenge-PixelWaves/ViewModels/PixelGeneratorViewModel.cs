@@ -113,8 +113,6 @@ namespace Challenge_PixelWaves.ViewModels
                     if (v < min) min = v;
                     if (v > max) max = v;
                 }
-            double range = max - min;
-            if (range < 1e-8) range = 1.0;
 
             // Pour chaque pixel du bitmap d'affichage
             for (int y = 0; y < dstHeight; y++)
@@ -141,7 +139,7 @@ namespace Challenge_PixelWaves.ViewModels
                                (1 - wx) * wy * v01 +
                                wx * wy * v11;
 
-                    byte intensity = (byte)(255.0 * (v - min) / range);
+                    byte intensity = CalculateIntensity(v, min, max, 16);
                     int index = (y * _stride) + (x * 4);
                     byte blue = (byte)(255);
                     byte green = intensity;
@@ -157,6 +155,25 @@ namespace Challenge_PixelWaves.ViewModels
             Bitmap.Lock();
             Bitmap.WritePixels(new System.Windows.Int32Rect(0, 0, _width, _height), _pixels, _stride, 0);
             Bitmap.Unlock();
+        }
+
+        private byte CalculateIntensity(double v, double min, double max, int discretization = 1)
+        {
+            double range = max - min;
+            if (range < 1e-8) range = 1.0;
+
+            // Calcul de l'intensité normalisée
+            double norm = (v - min) / range;
+            norm = Math.Clamp(norm, 0.0, 1.0);
+
+            // Discrétisation si demandé
+            if (discretization > 1)
+            {
+                norm = Math.Round(norm * (discretization - 1)) / (discretization - 1);
+            }
+
+            int intensity = (int)Math.Round(norm * 255.0);
+            return (byte)intensity;
         }
     }
 }
